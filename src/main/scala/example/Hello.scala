@@ -95,8 +95,8 @@ object Hello extends App {
   println(s"$del\nDone\n$del")
 
   val bat = s"""
-    |copy "..\\silhmojs\\client\\target\\scala-2.11\\client-opt.js" "..\\chessapp\\public\\javascripts\\client-opt.js"
-    |copy "..\\silhmojs\\client\\target\\scala-2.11\\client-jsdeps.min.js" "..\\chessapp\\public\\javascripts\\client-jsdeps.min.js"
+    |copy "..\\silhmojs\\client\\target\\scala-2.11\\client-opt.js" "..\\chessapp\\public\\javascripts\\" /Y
+    |copy "..\\silhmojs\\client\\target\\scala-2.11\\client-jsdeps.min.js" "..\\chessapp\\public\\javascripts\\" /Y
     |${copies.mkString("\n")}
   """.stripMargin
 
