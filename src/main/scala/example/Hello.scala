@@ -11,6 +11,8 @@ case class CopyTask(
 object Hello extends App {
   val srcRoot = "..\\silhmojs\\"
   val destRoot = "..\\chessapp\\"
+  val scalaVersion = "2.11"
+  val clientoptjs = "client-opt.js"
   val tasks = List(
     CopyTask(srcRoot + "server\\app\\", destRoot + "app\\"),
     CopyTask(srcRoot + "server\\public\\", destRoot + "public\\"),
@@ -52,6 +54,8 @@ object Hello extends App {
 
       allfiles
     }
+  def fullPath(root: String, path: String) = root + path
+
   var copies = scala.collection.mutable.ArrayBuffer[String]()
   def collect(copy: Boolean = false) {
     for (task <- tasks) {
@@ -83,9 +87,29 @@ object Hello extends App {
     }
   }
 
+  def change_version {
+    val chesshtmlpath = fullPath(destRoot, "app\\views\\chess.scala.html")
+    val content = ReadFileToString(chesshtmlpath)
+    val parts = content.split(s"$clientoptjs\\?v")
+    val quote = """""""
+    val parts2 = parts(1).split(quote)
+    val version = parts2(0).toInt
+    val newversion = version + 1
+    val newcontent = parts(0) + s"$clientoptjs?v" + newversion + quote + parts2(1)
+    println("new chess.scala.html version : " + newversion)
+    WriteStringToFile("chess.scala.html", newcontent)
+  }
+
+  val commitname = args.head
+
   collect()
+
+  change_version
+
   val del = "----------------------------------------"
   println(s"$del\nSummary\n$del")
+  println("chess.scala.html :")
+  println(ReadFileToString("chess.scala.html"))
   for (task <- tasks) {
     println(task)
     println(s"--> up to date: ${task.uptodate}, changed: ${task.changed}")
@@ -95,9 +119,20 @@ object Hello extends App {
   println(s"$del\nDone\n$del")
 
   val bat = s"""
-    |copy "..\\silhmojs\\client\\target\\scala-2.11\\client-opt.js" "..\\chessapp\\public\\javascripts\\" /Y
-    |copy "..\\silhmojs\\client\\target\\scala-2.11\\client-jsdeps.min.js" "..\\chessapp\\public\\javascripts\\" /Y
+    |copy "${fullPath(srcRoot, s"client\\target\\scala-$scalaVersion\\$clientoptjs")}" "${fullPath(destRoot, "public\\javascripts\\")}" /Y
+    |copy "${fullPath(srcRoot, "client\\target\\scala-$scalaVersion\\client-jsdeps.min.js")}" "${fullPath(destRoot, "public\\javascripts\\")}" /Y
+    |copy "chess.scala.html" "${fullPath(destRoot, "app\\views\\")}" /Y
     |${copies.mkString("\n")}
+    |cd $srcRoot
+    |call pre.bat
+    |git add -A .
+    |git commit -m "$commitname"
+    |git push origin master
+    |cd $destRoot
+    |call pre.bat
+    |git add -A .
+    |git commit -m "$commitname"
+    |git push origin master
   """.stripMargin
 
   println(bat)
